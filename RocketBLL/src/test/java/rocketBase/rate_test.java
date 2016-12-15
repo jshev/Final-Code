@@ -17,7 +17,8 @@ public class rate_test {
 			assert(RateBLL.getRate(700) == 4);
 			assert(RateBLL.getRate(650) == 4.5);
 			assert(RateBLL.getRate(600) == 5);
-		} catch (RateException e) {
+		}
+		catch (RateException e) {
 			e.printStackTrace();
 		}
 	}

@@ -1,60 +1,116 @@
 package rocket.app.view;
 
 import eNums.eAction;
+import exceptions.RateException;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import rocket.app.MainApp;
+import rocketBase.RateBLL;
 import rocketCode.Action;
 import rocketData.LoanRequest;
 
 public class MortgageController {
 
 	private MainApp mainApp;
-	
-	//	TODO - RocketClient.RocketMainController
-	
-	//	Create private instance variables for:
-	//		TextBox  - 	txtIncome
-	//		TextBox  - 	txtExpenses
-	//		TextBox  - 	txtCreditScore
-	//		TextBox  - 	txtHouseCost
-	//		ComboBox -	loan term... 15 year or 30 year
-	//		Labels   -  various labels for the controls
-	//		Button   -  button to calculate the loan payment
-	//		Label    -  to show error messages (exception throw, payment exception)
+	// Created private instance variables
+
+	@FXML
+	private TextField txtIncome;
+	@FXML
+	private TextField txtExpenses;
+	@FXML
+	private TextField txtCreditScore;
+	@FXML
+	private TextField txtHouseCost;
+	@FXML
+	private TextField txtDownPayment;
+
+	@FXML
+	private Label lblIncome;
+	@FXML
+	private Label lblExpenses;
+	@FXML
+	private Label lblCreditScore;
+	@FXML
+	private Label lblHouseCost;
+	@FXML
+	private Label lblDownPayment;
+	@FXML
+	private Label lblTerm;
+	@FXML
+	private Label lblMortgagePayment;
+	@FXML
+	private Label lblErrors;
+
+	@FXML
+	private Button btnCalculate;
+
+	ObservableList<String> terms = FXCollections.observableArrayList(
+			"15 Years",
+			"30 Years");
+	@FXML
+	private ComboBox<String> cmbTerm;
 
 	public void setMainApp(MainApp mainApp) {
 		this.mainApp = mainApp;
 	}
-	
-	
-	//	TODO - RocketClient.RocketMainController
-	//			Call this when btnPayment is pressed, calculate the payment
+
 	@FXML
-	public void btnCalculatePayment(ActionEvent event)
-	{
+	public void btnCalculatePayment(ActionEvent event) {
+		// Called this when btnPayment is pressed, calculate the payment
+
 		Object message = null;
-		//	TODO - RocketClient.RocketMainController
-		
 		Action a = new Action(eAction.CalculatePayment);
 		LoanRequest lq = new LoanRequest();
-		//	TODO - RocketClient.RocketMainController
-		//			set the loan request details...  rate, term, amount, credit score, downpayment
-		//			I've created you an instance of lq...  execute the setters in lq
+
+		// Set the loan request details and executed the setters in lq
+		try {
+			lq.setdRate(RateBLL.getRate(lq.getiCreditScore()));
+			if (cmbTerm.getValue() == "15 Years") {
+				lq.setiTerm(15);
+			}
+			else {
+				lq.setiTerm(30);
+			}
+			lq.setdAmount(Double.parseDouble(txtHouseCost.getText()));
+			lq.setiCreditScore(Integer.parseInt(txtCreditScore.getText()));
+			lq.setiDownPayment(Integer.parseInt(txtDownPayment.getText()));
+			lq.setiExpenses(Double.parseDouble(txtExpenses.getText()));
+			lq.setiIncome(Double.parseDouble(txtIncome.getText()));
+		}
+		catch (RateException e) {
+			lblErrors.setText("No rate found.");
+		}
 
 		a.setLoanRequest(lq);
-		
-		//	send lq as a message to RocketHub		
 		mainApp.messageSend(lq);
+		// Sent lq as a message to RocketHub
 	}
-	
-	public void HandleLoanRequestDetails(LoanRequest lRequest)
-	{
-		//	TODO - RocketClient.HandleLoanRequestDetails
-		//			lRequest is an instance of LoanRequest.
-		//			after it's returned back from the server, the payment (dPayment)
-		//			should be calculated.
-		//			Display dPayment on the form, rounded to two decimal places
-		
+
+	public void HandleLoanRequestDetails(LoanRequest lRequest) {
+		double Payment1 = lRequest.getiIncome() * 0.28;
+		double Payment2 = lRequest.getiIncome() * 0.36 - lRequest.getiExpenses();
+		double truePayment;
+
+		if (Payment1 < Payment2) {
+			truePayment = Payment1;
+		}
+		else {
+			truePayment = Payment2;
+		}
+
+		if (lRequest.getdPayment() > truePayment) {
+			lblErrors.setText("House Cost is too high.");
+		}
+		else {
+			lblMortgagePayment.setText((String.format("%.2f", lRequest.getdPayment())));
+		}
+		// Displayed dPayment rounded to two decimal places
 	}
 }
