@@ -25,7 +25,8 @@ public class RateDAL {
 		try {
 			tx = session.beginTransaction();
 			
-			List lstRates = session.createQuery("FROM RateDomainModel ORDER BY RateDomainModel.iMinCreditScore DESC").list();
+			List lstRates = session.createQuery("FROM RateDomainModel R ORDER BY R.dInterestRate DESC").list();
+			// Implemented order by statement
 			for (Iterator iterator = lstRates.iterator(); iterator.hasNext();) {
 				RateDomainModel rte = (RateDomainModel) iterator.next();
 				alRates.add(rte);
